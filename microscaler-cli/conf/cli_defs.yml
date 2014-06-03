@@ -1,0 +1,46 @@
+---
+
+login:
+  target: http://localhost:56785/asgcc
+  user: user01 
+  key:  key
+
+load_balancer:
+  name: lb1
+  lb_port: 80
+  instances_port: 9080
+  availability_zones:
+    - docker02
+  protocol: HTTP
+
+launch_configuration:
+  name: lconf1
+  image_id: acmeair/tomcat 
+  instances_type: m1.small
+  key: keypair
+
+autoscaling_group:
+  name: asg1
+  availability_zones:
+    - docker02
+  launch_configuration: lconf1
+  min_size: 1
+  max_size: 3
+  desired_capacity: 1
+  scale_out_cooldown: 300
+  scale_in_cooldown: 60
+  load_balancer: lb1
+  domain: research.ibm.com
+  
+policy:
+  name: policy1
+  auto_scaling_group: asg1
+  metric: CPU
+  statistic: AVG
+  sampling_window: 60
+  breach_duration: 120
+  scale_out_step: 1
+  scale_in_step: -1  
+  upper_threshold: 80
+  lower_threshold: 30
+ 

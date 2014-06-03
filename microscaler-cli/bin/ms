@@ -1,0 +1,4 @@
+#!/bin/bash
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+/usr/bin/env ruby $DIR/../lib/micro_cli.rb "$@"
