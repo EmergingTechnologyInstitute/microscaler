@@ -7,7 +7,7 @@ VM with Docker 0.9 and higher (e.g. Vagrant VM)
 
 ## Installing
 
-1. set up the demon on the Host VM so that it uses the network and not just Unix sockets.
+Set up the demon on the Host VM so that it uses the network and not just Unix sockets.
 
 	$ sudo vi /etc/default/docker
 
@@ -20,14 +20,14 @@ Then run:
   
 	$ sudo service docker restart
 
-2. Clone the microscaler Docker installer github repo 
+clone the microscaler Docker installer github repo 
 
 	$ git clone https://github.com/EmergingTechnologyInstitute/acmeair-netflix-docker
 	$ cd acmeair-netflix-docker
 
 *TODO - update the above URL/path accordingly to new github name*
 
-3. Build docker containers for Microscaler and host agent
+build docker containers for Microscaler and host agent
 
 	$ alias docker='docker -H :4243'
 	$ docker build -t acmeair/base base
