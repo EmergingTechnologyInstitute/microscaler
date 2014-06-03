@@ -22,10 +22,10 @@ Then run:
 
 2. Clone the microscaler Docker installer github repo 
 
-	$ git clone https://github.rtp.raleigh.ibm.com/cloudoperations/acmeair-netflix-docker
-	$ cd acmeair-netflix-docker.git && git checkout asg-controller
+	$ git clone https://github.com/EmergingTechnologyInstitute/acmeair-netflix-docker
+	$ cd acmeair-netflix-docker
 
-*TODO - change the above URL/path accordingly to new github URL/name*
+*TODO - update the above URL/path accordingly to new github URL/name*
 
 3. Build docker containers for Microscaler and host agent
 
@@ -144,4 +144,4 @@ it shows events related to the invocation of the REST API (e.g. through CLI or a
 
 ## License
 
-Apache 2
+Apache 2.0
