@@ -25,7 +25,7 @@ Then run:
 	$ git clone https://github.com/EmergingTechnologyInstitute/acmeair-netflix-docker
 	$ cd acmeair-netflix-docker
 
-*TODO - update the above URL/path accordingly to new github URL/name*
+*TODO - update the above URL/path accordingly to new github name*
 
 3. Build docker containers for Microscaler and host agent
 
@@ -40,9 +40,11 @@ Then run:
 	$ docker run -t -d -P acmeair/microscaler-agent
 
 ## Using
-<NAME OF DOCKER PROJECT>/bin/configureasg.sh provides an example of running the microscaler by invoking the CLI from the host with ssh.
+acmeair-netflix-docker/bin/configureasg.sh provides an example of running the microscaler by invoking the CLI from the host with ssh.
 
-You may also ssh into the Microscaler container to use the Microscaler CLI and interacting with the Microscaler components.
+*TODO - update the above URL/path accordingly to new github name*
+
+You may also ssh into the Microscaler container to use the Microscaler CLI and interact with the Microscaler components.
 
 ### Configuration file
 The Microscaler configuration file is located at:
@@ -141,6 +143,10 @@ it shows events related to the invocation of the REST API (e.g. through CLI or a
 ```bash
 /var/log/supervisor/controller*.log
 ```
+
+## Limitations
+1. Agent is not reporting CPU/memory metrics.
+2. Monitoring and Webhooks to support policy-based elastic autoscaling not implemented.
 
 ## License
 
