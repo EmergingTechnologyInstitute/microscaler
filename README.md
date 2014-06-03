@@ -1,6 +1,6 @@
-Microscaler
+microscaler
 ===========
-Microscaler provides an implementation of autoscaling groups for Docker containers. 
+microscaler provides an implementation of autoscaling groups for Docker containers. 
 
 ## Requirements
 VM with Docker 0.9 and higher (e.g. Vagrant VM)
@@ -20,14 +20,14 @@ Then run:
   
 	$ sudo service docker restart
 
-clone the microscaler Docker installer github repo 
+clone the microscaler docker installer github repo 
 
 	$ git clone https://github.com/EmergingTechnologyInstitute/acmeair-netflix-docker
 	$ cd acmeair-netflix-docker
 
 *TODO - update the above URL/path accordingly to new github name*
 
-build docker containers for Microscaler and host agent
+finally, build the docker containers for microscaler and host agent:
 
 	$ alias docker='docker -H :4243'
 	$ docker build -t acmeair/base base
@@ -49,15 +49,17 @@ You may also ssh into the Microscaler container to use the Microscaler CLI and i
 ### Configuration file
 The Microscaler configuration file is located at:
 
-$ /usr/local/microscaler/config/microscaler.yml
+```bash
+/usr/local/microscaler/config/microscaler.yml
+```
 
 Make sure that the address set for the docker daemon_url is set to the address of the interface docker0 in the docker host VM.
-If you make changes to the configuration you will need to restart Microscaler components with the command:
+If you make changes to the configuration you will need to restart microscaler components with the command:
 
 	$ supervisorctl restart controller healthmanager worker-launch worker-stop
 
-### Managing Microscaler components
-Microscaler components are managed by supervisor. To find out the status of each component run:
+### Managing microscaler components
+microscaler components are managed by supervisor. To find out the status of each component run:
 
 	$ supervisorctl
 
@@ -73,9 +75,9 @@ For example:
 	worker-launch                    RUNNING    pid 606, uptime 9:02:35
 	worker-stop                      RUNNING    pid 570, uptime 9:03:04
 
-### Using the Microscaler CLI
+### Using the microscaler CLI
 
-You can access the Microscaler CLI help screen simply typing 
+You can access the microscaler CLI help screen simply typing 
 
 	$ ms
 
