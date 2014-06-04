@@ -70,7 +70,9 @@ ASG_SCHEMA = {
     "desired_capacity" => {"type" => "int"},
     "domain" => {"type" => "string"},
     "state" => {"type" => "string"},
-    "url" => {"type" => "string"}       
+    "url" => {"type" => "string"},
+    "last_scale_out_ts"  => {"type" => "int"},
+    "last_scale_in_ts"   => {"type" => "int"}           
   }
 }
 

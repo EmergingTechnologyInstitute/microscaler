@@ -20,6 +20,10 @@ require "nats/client"
 require "logger"
 require "#{File.dirname(__FILE__)}/rest_client"
 
+# logger settings
+L = Logger.new(STDERR)
+L.level = Logger::DEBUG
+
 module ASG
   class DockerAgent
     def initialize()
@@ -67,7 +71,7 @@ module ASG
                    account=data['account']
                    instance_id=id[0..11] # container ID (first 12 chars)
                    msg=build_hb_message(host,port,asg_name,domain,account,instance_id)
-                   p "publishing #{msg}"
+                   L.debug "publishing #{msg}"
                    NATS.publish(@nats_subject, msg)
                 end
               end

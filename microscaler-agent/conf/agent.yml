@@ -2,7 +2,7 @@
 
 agent:
   poller_interval: 10
-  nats: nats://172.17.0.4:4222
+  nats: nats://localhost:4222
   nats_subject: router.register
 
 docker:

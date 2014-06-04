@@ -23,6 +23,7 @@ require "#{File.dirname(__FILE__)}/im_worker.rb"
 require "resque"
 require "uuidtools"
 require "logger"
+require "securerandom"
 require "#{File.dirname(__FILE__)}/constants"
 
 module ASG
@@ -158,30 +159,35 @@ module ASG
 
    # stops an instance using the job queue and async workers 
     def stop_instance(user,key,asg_name,type,lock)
-      instance_id=stop_policy(user,asg_name,type)      
-      L.debug "stopping instance for asg=#{asg_name} and user=#{user} with id=#{instance_id}"
-      Resque.enqueue(ASG::StopInstanceWorker,user,key,asg_name,instance_id,type,false,lock)
+      instance_id=stop_policy(user,asg_name,type)   
+      if(instance_id!=nil)   
+        L.debug "stopping instance for asg=#{asg_name} and user=#{user} with id=#{instance_id}"
+        Resque.enqueue(ASG::StopInstanceWorker,user,key,asg_name,instance_id,type,false,lock)
+      else
+        L.error "stop policy could not find instances to stop for asg=#{asg_name} and user=#{user}"
+      end    
     end
     
-    # kills an instance using the job queue and async workers 
-    def kill_instance(user,key,asg_name,type,lock)
-      instances=query_instances(user,{"name"=>asg_name,"type"=>type, "status"=>NOT_RUNNING_STATE},{"timestamp"=>1},1)  
-      if(instances.length==1)
-        instance_id=instances[0]['instance_id']
-        L.debug "killing instance for asg=#{asg_name} and user=#{user} with id=#{instance_id}"
-        delete_instance(user,asg_name,instance_id,type)
-        Resque.enqueue(ASG::StopInstanceWorker,user,key,asg_name,instance_id,type,true,lock)
-      else
-        L.debug "no instance to kill found for asg=#{asg_name} and user=#{user}"
+    # GC dead instances
+    def gc_instances(user,key,asg_name,type)
+      instances=query_instances(user,{"name"=>asg_name,"type"=>type, "status"=>NOT_RUNNING_STATE},{"timestamp"=>1},1000) 
+      if(instances.length>0)
+        L.debug "GC: found #{instances.length} instance(s) to remove for asg=#{asg_name} and user=#{user}"  
+        stop_lock=lease_lock(user,asg_name,STOP_TYPE_LEASE,instances.length)   
+        instances.each do |instance|
+          instance_id=instance['instance_id']
+          L.debug "garbage collecting instance for asg=#{asg_name} and user=#{user} with id=#{instance_id}"
+          #delete_instance(user,asg_name,instance_id,type)
+          Resque.enqueue(ASG::StopInstanceWorker,user,key,asg_name,instance_id,type,true,stop_lock)
+        end    
       end
     end
  
-    # generate a hostname
+    # generate a unique hostname
     def gen_hostname(account,asg_name)
-      n = (Time.now.to_f * 1000.0).to_i % (2 ** 20)
-      id = "%05x" % n
-      x="#{asg_name.gsub("_", "-")}-#{id}" 
-      x
+      # generate a short unique ID and use for the hostname
+      id = SecureRandom.hex(5)
+      "#{asg_name.gsub("_", "-")}-#{id}" 
     end
 
     # updates & sets a absolute number of instances
@@ -211,6 +217,7 @@ module ASG
       else
         L.debug "nothing to be done"  
       end
+      n_delta
     end
 
     # launch n instances for a ASG 

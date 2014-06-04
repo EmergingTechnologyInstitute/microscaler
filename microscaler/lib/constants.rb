@@ -35,7 +35,7 @@ STALLED_STATE="STALLED"
 
 # intervals and timeout for workers 
 INTERVAL=5
-MAX_TIME=360
+MAX_TIME=90
 
 # logger settings
 L = Logger.new(STDERR)

@@ -85,7 +85,7 @@ describe ASG::ASGManager do
       len=-1
       while true do
         if(@hm.get_map.has_key?(USER+"."+ASG_NAME))
-          len=@hm.get_map[USER+"."+ASG_NAME].length
+          len=@hm.get_map[USER+"."+ASG_NAME][0].length
         end
         n+=1
         if(len==1 || n>MAX_TIME/INTERVAL )
@@ -93,7 +93,7 @@ describe ASG::ASGManager do
         end
         sleep(INTERVAL)
       end
-      @hm.get_map[USER+"."+ASG_NAME].length.should eql 1
+      @hm.get_map[USER+"."+ASG_NAME][0].length.should eql 1
       x=@im.query_instances(USER,{"name"=>ASG_NAME,"type"=>TYPE_CONTAINER},nil,100)
       x.length.should eql 1
       x[0]["status"].should eql RUNNING_STATE
@@ -110,7 +110,7 @@ describe ASG::ASGManager do
       len=-1
       while true do
         if(@hm.get_map.has_key?(USER+"."+ASG_NAME))
-          len=@hm.get_map[USER+"."+ASG_NAME].length
+          len=@hm.get_map[USER+"."+ASG_NAME][0].length
         end
         n+=1
         if(len==0 || n>MAX_TIME/INTERVAL )
@@ -121,7 +121,7 @@ describe ASG::ASGManager do
       x=@im.query_instances(USER,{"name"=>ASG_NAME,"type"=>TYPE_CONTAINER,"instance_id"=>$id},nil,100)
       x.length.should eql 1
       x[0]["status"].should eql NOT_RUNNING_STATE
-      @hm.get_map[USER+"."+ASG_NAME].length.should eql 0
+      @hm.get_map[USER+"."+ASG_NAME][0].length.should eql 0
     end
   end
 
@@ -132,7 +132,7 @@ describe ASG::ASGManager do
       len=-1
       while true do
         if(@hm.get_map.has_key?(USER+"."+ASG_NAME))
-          len=@hm.get_map[USER+"."+ASG_NAME].length
+          len=@hm.get_map[USER+"."+ASG_NAME][0].length
         end
         x=@im.query_instances(USER,{"name"=>ASG_NAME,"type"=>TYPE_CONTAINER},nil,100)
         n+=1
@@ -141,7 +141,7 @@ describe ASG::ASGManager do
         end
         sleep(INTERVAL)
       end
-      @hm.get_map[USER+"."+ASG_NAME].length.should eql 1
+      @hm.get_map[USER+"."+ASG_NAME][0].length.should eql 1
       x=@im.query_instances(USER,{"name"=>ASG_NAME,"type"=>TYPE_CONTAINER},nil,100)
       x.length.should eql 1
       x[0]["status"].should eql RUNNING_STATE
@@ -157,7 +157,7 @@ describe ASG::ASGManager do
       len=-1
       while true do
         if(@hm.get_map.has_key?(USER+"."+ASG_NAME))
-          len=@hm.get_map[USER+"."+ASG_NAME].length
+          len=@hm.get_map[USER+"."+ASG_NAME][0].length
         end
         n+=1
         if(len==1 || n>MAX_TIME/INTERVAL )
@@ -165,7 +165,7 @@ describe ASG::ASGManager do
         end
         sleep(INTERVAL)
       end
-      @hm.get_map[USER+"."+ASG_NAME].length.should eql 1
+      @hm.get_map[USER+"."+ASG_NAME][0].length.should eql 1
     end
   end
 
@@ -180,7 +180,7 @@ describe ASG::ASGManager do
       len=-1
       while true do
         if(@hm.get_map.has_key?(USER+"."+ASG_NAME))
-          len=@hm.get_map[USER+"."+ASG_NAME].length
+          len=@hm.get_map[USER+"."+ASG_NAME][0].length
         end
         n+=1
         if(len==3 || n>MAX_TIME/INTERVAL )
@@ -188,7 +188,7 @@ describe ASG::ASGManager do
         end
         sleep(INTERVAL)
       end
-      @hm.get_map[USER+"."+ASG_NAME].length.should eql 3
+      @hm.get_map[USER+"."+ASG_NAME][0].length.should eql 3
       x=@im.query_instances(USER,{"name"=>ASG_NAME,"type"=>TYPE_CONTAINER},nil,100)
         p x
       sleep(INTERVAL)
@@ -212,7 +212,7 @@ describe ASG::ASGManager do
       len=-1
       while true do
         if(@hm.get_map.has_key?(USER+"."+ASG_NAME))
-          len=@hm.get_map[USER+"."+ASG_NAME].length
+          len=@hm.get_map[USER+"."+ASG_NAME][0].length
         end
         n+=1
         if(len<3 || n>MAX_TIME/INTERVAL )
@@ -227,7 +227,7 @@ describe ASG::ASGManager do
       sleep(2)
       while true do
         if(@hm.get_map.has_key?(USER+"."+ASG_NAME))
-          len=@hm.get_map[USER+"."+ASG_NAME].length
+          len=@hm.get_map[USER+"."+ASG_NAME][0].length
         end
         x=@im.query_instances(USER,{"name"=>ASG_NAME,"type"=>TYPE_CONTAINER},nil,100)
         n+=1
@@ -237,7 +237,7 @@ describe ASG::ASGManager do
         end
         sleep(INTERVAL)
       end
-      @hm.get_map[USER+"."+ASG_NAME].length.should eql 3
+      @hm.get_map[USER+"."+ASG_NAME][0].length.should eql 3
       x=@im.query_instances(USER,{"name"=>ASG_NAME,"type"=>TYPE_CONTAINER},nil,100)
       x.length.should eql 3
       x[0]["status"].should eql RUNNING_STATE
@@ -254,7 +254,7 @@ describe ASG::ASGManager do
       len=-1
       while true do
         if(@hm.get_map.has_key?(USER+"."+ASG_NAME))
-          len=@hm.get_map[USER+"."+ASG_NAME].length
+          len=@hm.get_map[USER+"."+ASG_NAME][0].length
         end
         n+=1
         if(len==0 || n>MAX_TIME/INTERVAL )
@@ -262,7 +262,7 @@ describe ASG::ASGManager do
         end
         sleep(INTERVAL)
       end
-      @hm.get_map[USER+"."+ASG_NAME].length.should eql 0
+      @hm.get_map[USER+"."+ASG_NAME][0].length.should eql 0
       x=@im.query_instances(USER,{"name"=>ASG_NAME,"type"=>TYPE_CONTAINER},nil,100)
       x.length.should eql 0
     end

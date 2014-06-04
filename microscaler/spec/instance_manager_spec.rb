@@ -213,7 +213,7 @@ describe ASG::InstanceManager do
       x.length().should eql 1
     end
   end
-  
+
   after :all do
     x=@im.query_instances(USER,{"name"=>ASG_NAME,"type"=>TYPE_CONTAINER},nil,100)
     if(x.length>0)

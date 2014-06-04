@@ -95,10 +95,14 @@ module ASG
       ip_address=msg["host"]
 
       asg_key=get_asg_key(account, asg_name)
-      instances=@asgs[asg_key]
-      if(instances==nil)
+      asg_entry=@asgs[asg_key]
+      if(asg_entry==nil)
         instances=Hash.new
-      end
+        ts=0
+      else
+        instances=asg_entry[0]
+        ts=asg_entry[1]
+      end  
       if(!instances.has_key?(instance_id))
         begin
           L.debug "HM ---> new instance id=#{instance_id} account=#{account} asg_name=#{asg_name}"
@@ -114,11 +118,12 @@ module ASG
       end
 
       instances[instance_id]=Time.now.to_i
-      @asgs[asg_key]=instances
+      @asgs[asg_key]=[instances,ts]
     end
 
     def updater
-      @asgs.each do |asg_key,instances|
+      @asgs.each do |asg_key,asg_entry|
+        instances=asg_entry[0]
         instances.delete_if{ |id,ts|
           stale = Time.now.to_i-ts > @max_age_stale
           if(stale)
@@ -156,6 +161,12 @@ module ASG
               desired_count=asg_def['desired_capacity']
               min_size=asg_def['min_size']
               max_size=asg_def['max_size']
+              # check that we are not in a cooldown period  
+              if((asg_def['last_scale_in_ts']!=nil && Time.now.to_i-asg_def['last_scale_in_ts']<=asg_def['scale_in_cooldown']) or 
+                (asg_def['last_scale_out_ts']!=nil && Time.now.to_i-asg_def['last_scale_out_ts']<=asg_def['scale_in_cooldown']) ) 
+                L.debug "HM ---> asg=#{asg_name} account=#{account} is in COOLDOWN state! no action taken until cooldown expires."   
+                next  
+              end  
               # compare state only if there are instances started from IM
               if(desired_count>0)
                 actual_count=get_actual_state(account,asg_name)
@@ -168,11 +179,17 @@ module ASG
                   L.debug "HM ---> scale-up asg=#{asg_name} account=#{account}"
                   lock=@im.lease_lock(account,asg_name,START_TYPE_LEASE,desired_count-actual_count)
                   if(lock!=nil )
-                    if (!@im.instances_starting?(account,asg_name,TYPE_CONTAINER))
+                    if (!@im.instances_starting?(account,asg_name,TYPE_CONTAINER) && 
+                    Time.now.to_i-get_last_ts_pending_action(account,asg_name)>(@max_age_stale+@updater_interval))
                       L.debug "HM ---> starting #{desired_count-actual_count} instances for #{asg_name} account=#{account}"                    
                       template=@asgm.build_template(account,asg_def)
                       start_instances(account,template,desired_count-actual_count,lock)
+                      asg_def['last_scale_out_ts']=Time.now.to_i
+                      @asgm.update_asg(account,asg_name,asg_def)  
                     else
+                      # update timestamp for last time starting state was detected
+                      asg_key=get_asg_key(account,asg_name)
+                      @asgs[asg_key]=[@asgs[asg_key][0],Time.now.to_i]
                       L.warn "HM ---> waiting for other instances to start on #{asg_name} account=#{account}"    
                     end  
                   else
@@ -184,10 +201,16 @@ module ASG
                   L.debug "HM ---> scale-down asg=#{asg_name} account=#{account}"
                   lock=@im.lease_lock(account,asg_name,STOP_TYPE_LEASE,actual_count-desired_count)
                   if(lock!=nil)
-                    if(!@im.instances_stopping?(account,asg_name,TYPE_CONTAINER))
+                    if(!@im.instances_stopping?(account,asg_name,TYPE_CONTAINER) && 
+                    Time.now.to_i-get_last_ts_pending_action(account,asg_name)>(@max_age_stale+@updater_interval))
                       L.debug "HM ---> stopping #{actual_count-desired_count} instances for asg=#{asg_name} account=#{account}" 
                       stop_instances(account,asg_name,TYPE_CONTAINER,actual_count-desired_count,lock)
+                      asg_def['last_scale_in_ts']=Time.now.to_i
+                      @asgm.update_asg(account,asg_name,asg_def)  
                     else
+                      # update timestamp for last time stopping state was detected
+                      asg_key=get_asg_key(account,asg_name)
+                      @asgs[asg_key]=[@asgs[asg_key][0],Time.now.to_i]
                       L.debug "HM ---> waiting for other instances to stop for asg=#{asg_name} account=#{account}"
                     end   
                   else
@@ -201,8 +224,7 @@ module ASG
           }
         }
       rescue=>e
-        L.error e.message
-        p e.backtrace
+        L.error "#{e.message} -  #{e.backtrace}"
       end
     end
 
@@ -212,7 +234,14 @@ module ASG
 
     def get_instances(account,asg_name)
       asg_key=get_asg_key(account,asg_name)
-      instances=@asgs[asg_key]
+      instances=@asgs[asg_key][0]
+    end
+    
+    # gets the last ts detected for a pending action such as stopping or starting
+    # this is used to wait a little after a pending action since the state might not be current
+    def get_last_ts_pending_action(account,asg_name)
+      asg_key=get_asg_key(account,asg_name)
+      @asgs[asg_key][1]
     end
 
     # finds the timestamp for the youngest instance that was launched
@@ -255,15 +284,14 @@ module ASG
     # launch as many instances as needed to keep actual state == desired state
     def start_instances(account,template,n_instances,lock)
       # get credentials to launch instances from auth manager
-      key=@am.get_credentials(account)
-      stop_lock=@im.lease_lock(account,template[:asg_name],STOP_TYPE_LEASE,n_instances)
+      key=@am.get_credentials(account)      
       azs=@im.pick_azs(account,template[:asg_name],template[:availability_zones],n_instances)
       (1..n_instances).each do
-        @im.launch_instance(account,key,template[:asg_name],template[:type],@im.gen_hostname(account,template[:asg_name]),template[:domain],template[:n_cpus],template[:memory],azs.shift(),template[:image_id],template[:hourly_billing],lock,template[:metadata])        
-
-        # for each launched instance I should try to kill one that is in DOWN 
-        @im.kill_instance(account,key,template[:asg_name],template[:type],stop_lock)
+        @im.launch_instance(account,key,template[:asg_name],template[:type],@im.gen_hostname(account,template[:asg_name]),template[:domain],template[:n_cpus],template[:memory],azs.shift(),template[:image_id],template[:hourly_billing],lock,template[:metadata])                
       end
+      
+      # Garbage Collection - find and kill instances in DOWN state
+      @im.gc_instances(account,key,template[:asg_name],template[:type])
     end
 
     # stop as many instances as needed to keep actual state == desired state

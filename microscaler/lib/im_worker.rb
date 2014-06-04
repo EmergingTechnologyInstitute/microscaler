@@ -48,7 +48,7 @@ module ASG
             sleep(INTERVAL)
           end
         else
-          L.debug "killing #{instance_id} lock=#{lock}"
+          L.debug "garbage collecting #{instance_id} lock=#{lock}"
         end      
         status=client.delete_container(instance_id)
         # delete from IM
@@ -65,9 +65,11 @@ module ASG
     conf=YAML.load_file("#{File.dirname(__FILE__)}/../conf/microscaler.yml")
          
     def self.perform(user,key,asg_name,type,hostname,domain,n_cpus,max_memory,availability_zone,image_id,hourly_billing,lock,metadata)
-          begin
+          begin           
             client=ASG::ClientFactory.create(user,key)
-    
+            im=ASG::InstanceManager.new()
+            im.release_lock(user,asg_name,lock)
+          
             # prepare user metadata to be associated with the instance
             user_domain="#{user.downcase}.#{@lb_domain}"
             if(metadata!=nil && metadata['local_http_port']!=nil)
@@ -85,10 +87,8 @@ module ASG
               raise result["message"]
             end
             guid=UUIDTools::UUID.random_create.to_s
-            doc=build_doc(guid,result["id"].to_s,asg_name,type,hostname,domain,n_cpus,max_memory,availability_zone,image_id,hourly_billing,metadata)
-            im=ASG::InstanceManager.new()
-            im.create_or_update_instance(user,doc)
-            im.release_lock(user,asg_name,lock)
+            doc=build_doc(guid,result["id"].to_s,asg_name,type,hostname,domain,n_cpus,max_memory,availability_zone,image_id,hourly_billing,metadata)           
+            im.create_or_update_instance(user,doc)          
           rescue=>e
             L.error "#{e.message} -  #{e.backtrace}"
           end

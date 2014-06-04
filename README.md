@@ -1,13 +1,12 @@
-microscaler
-===========
-microscaler provides an implementation of autoscaling groups for Docker containers. 
+microscaler - an implementation of autoscaling groups for docker containers. 
+============================================================================
 
 ## Requirements
-VM with Docker 0.9 and higher (e.g. Vagrant VM)
+docker 0.9 and higher
 
 ## Installing
 
-Set up the demon on the Host VM so that it uses the network and not just Unix sockets.
+Set up the demon on the docker host so that it uses the network and not just Unix sockets.
 
 	$ sudo vi /etc/default/docker
 
@@ -22,14 +21,11 @@ Then run:
 
 clone the microscaler docker installer github repo 
 
-	$ git clone https://github.com/EmergingTechnologyInstitute/acmeair-netflix-docker
-	$ cd acmeair-netflix-docker
+	$ git clone https://github.com/EmergingTechnologyInstitute/acmeair-netflixoss-dockerlocal
+	$ cd acmeair-netflixoss-dockerlocal
 
-*TODO - update the above URL/path accordingly to new github name*
+build the docker containers for microscaler and host agent:
 
-finally, build the docker containers for microscaler and host agent:
-
-	$ alias docker='docker -H :4243'
 	$ docker build -t acmeair/base base
 	$ docker build -t acmeair/microscaler microscaler
 	$ docker build -t acmeair/microscaler-agent microscaler-agent
@@ -40,20 +36,18 @@ finally, build the docker containers for microscaler and host agent:
 	$ docker run -t -d -P acmeair/microscaler-agent
 
 ## Using
-acmeair-netflix-docker/bin/configureasg.sh provides an example of running the microscaler by invoking the CLI from the host with ssh.
+acmeair-netflixoss-dockerloca/bin/configureasg.sh provides an example of running the microscaler by invoking the CLI from the host with ssh.
 
-*TODO - update the above URL/path accordingly to new github name*
-
-You may also ssh into the Microscaler container to use the Microscaler CLI and interact with the Microscaler components.
+You may also ssh into the microscaler container to use the microscaler CLI and interact with the microscaler components.
 
 ### Configuration file
-The Microscaler configuration file is located at:
+The microscaler configuration file is located at:
 
 ```bash
 /usr/local/microscaler/config/microscaler.yml
 ```
 
-Make sure that the address set for the docker daemon_url is set to the address of the interface docker0 in the docker host VM.
+Make sure that the address set for the docker daemon_url is set to the address of the interface docker0 in the docker host.
 If you make changes to the configuration you will need to restart microscaler components with the command:
 
 	$ supervisorctl restart controller healthmanager worker-launch worker-stop
@@ -77,11 +71,11 @@ For example:
 
 ### Using the microscaler CLI
 
-You can access the microscaler CLI help screen simply typing 
+You can access the microscaler CLI help screen simply typing: 
 
 	$ ms
 
-Here is a simple example of using the CLI to configure and start an autoscaling group for the docker image *cirros*
+here is a simple example of using the CLI to configure and start an autoscaling group for the docker image *cirros*
 
 #### Logging in
 
@@ -93,20 +87,18 @@ Here is a simple example of using the CLI to configure and start an autoscaling 
 
 #### Adding an autoscaling group
 
-	$ ms add-asg --asg-name asg1 --asg-availability-zones docker-local-1a --asg-launch-configuration lconf1 --asg-min-size 1 \
-	--asg-desired-capacity 1 --asg-max-size 4 --asg-scale-out-cooldown 300 --asg-scale-in-cooldown 60 --asg-domain mydomain.net \
-	--asg-no-load-balancer 
+	$ ms add-asg --asg-name asg1 --asg-availability-zones docker02 --asg-launch-configuration lconf1 --asg-min-size 1 --asg-desired-capacity 1 --asg-max-size 4 --asg-scale-out-cooldown 60 --asg-scale-in-cooldown 60 --asg-domain mydomain.net --asg-no-load-balancer 
 
 #### Starting the autoscaling group
 
 	$ ms start-asg --asg-name asg1
 
 #### Checking status
-You can check if the new instances are started running *docker ps* from the host VM; e.g.
+You can check if the new instances are started running *docker ps* from the host; e.g.
 
 	$ docker ps
 	CONTAINER ID        IMAGE                           COMMAND                CREATED             STATUS              PORTS                   NAMES
-	7d4e456a18b2        cirros:latest        /usr/bin/supervisord   8 minutes ago       Up 3 seconds        0.0.0.0:49163->22/tcp   id962e-docker02        
+	963968b5bd43        cirros:0.3.0                    /sbin/init             56 seconds ago      Up 56 seconds         
 	56b6936c45eb        acmeair/asg-controller:latest   /usr/bin/supervisord   13 hours ago        Up 13 hours         0.0.0.0:49153->22/tcp   asg-controller      
 
 You can run *list-asgs* to query about ASGs, *ms list-instances* to query about instances for an ASG, *ms list-lconfs* to query about launch configurations; e.g.
@@ -114,7 +106,7 @@ You can run *list-asgs* to query about ASGs, *ms list-instances* to query about 
 	$ ms list-asgs
 	NAME  | STATE   | AVAILABILITY_ZONES | URL            | MIN_SIZE | MAX_SIZE | DESIRED_CAPACITY
 	------|---------|--------------------|----------------|----------|----------|-----------------
-	dock1 | started | ["docker02"]       |  			  | 1        | 3        | 1     
+	dock1 | started | ["docker02"]       | N/A 			  | 1        | 3        | 1     
 
 #### Checking Logs
 Logs are managed by supervisor and located at:
@@ -147,8 +139,8 @@ it shows events related to the invocation of the REST API (e.g. through CLI or a
 ```
 
 ## Limitations
-1. Agent is not reporting CPU/memory metrics.
-2. Monitoring and Webhooks to support policy-based elastic autoscaling not implemented.
+1. docker agent is not reporting CPU/memory metrics.
+2. monitoring components and webhooks to support policy-based elastic autoscaling are not implemented.
 
 ## License
 

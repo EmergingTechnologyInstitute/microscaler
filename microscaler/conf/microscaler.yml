@@ -39,7 +39,7 @@ health_manager:
   unregister_subject: "*.unregister"
   updater_interval: 10  # time between updaters invocations (in s)
   reconciler_interval: 20 # time between reconciler invocation (in s)
-  max_age_stale: 60 # time for an instance to be considered stale and pruned (in s)
+  max_age_stale: 15 # time for an instance to be considered stale and pruned (in s)
   max_age_from_launch: 60 # this should be the max time an instance would take to start (in s)
 
 instance_manager:
@@ -66,28 +66,75 @@ auth:
 
 # instance types
 instance_types:
-  m1.micro:
+  t1.micro:
     vcpu: 1
     memory: 512 
-    disk: 10
 
   m1.small:
     vcpu:  1
     memory: 1024
-    disk: 40
 
   m1.medium:
     vcpu:  1
     memory: 2048
-    disk: 80
 
   m1.large:
     vcpu:  2
     memory: 4096
-    disk: 160
 
   m1.xlarge:
     vcpu:  4
     memory: 8196
-    disk: 160
+
+  m2.xlarge:
+    vcpu:  4
+    memory: 8196
+
+  m2.2xlarge:
+    vcpu:  8
+    memory: 16392
+
+  m2.4xlarge:
+    vcpu:  16
+    memory: 32784
+    
+  m3.xlarge:
+    vcpu:  4
+    memory: 8196
+
+  m3.2xlarge:
+    vcpu:  8
+    memory: 16392
+
+  c1.medium:
+    vcpu: 2
+    memory: 1536 
+
+  c1.xlarge:
+    vcpu:  8
+    memory: 7168
+
+  cc1.4xlarge:
+    vcpu:  8
+    memory: 20480
+
+  cc2.8xlarge:
+    vcpu:  16
+    memory: 40960
+
+  cg1.4xlarge:
+    vcpu:  8
+    memory: 20480
+
+  cr1.8xlarge:
+    vcpu:  16
+    memory: 40960
+
+  hi1.4xlarge:
+    vcpu:  8
+    memory: 20480
+
+  hs1.8xlarge:
+    vcpu:  16
+    memory: 40960
 
