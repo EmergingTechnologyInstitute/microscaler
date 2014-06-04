@@ -99,7 +99,7 @@ You can check if the new instances are started running *docker ps* from the host
 	$ docker ps
 	CONTAINER ID        IMAGE                           COMMAND                CREATED             STATUS              PORTS                   NAMES
 	963968b5bd43        cirros:0.3.0                    /sbin/init             56 seconds ago      Up 56 seconds         
-	56b6936c45eb        acmeair/asg-controller:latest   /usr/bin/supervisord   13 hours ago        Up 13 hours         0.0.0.0:49153->22/tcp   asg-controller      
+	56b6936c45eb        acmeair/microscaler:latest   /usr/bin/supervisord   13 hours ago        Up 13 hours         0.0.0.0:49153->22/tcp   microscaler      
 
 You can run *list-asgs* to query about ASGs, *ms list-instances* to query about instances for an ASG, *ms list-lconfs* to query about launch configurations; e.g.
 
