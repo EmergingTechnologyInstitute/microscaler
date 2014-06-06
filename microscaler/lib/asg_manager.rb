@@ -66,20 +66,14 @@ module ASG
         doc['url']="#{doc['name']}.#{account.downcase}.#{@lb_domain}" 
       else
         doc['url']='N/A'     
-      end   
+      end     
       doc_current=retrieve_asg(account,name)              
       doc['state']=doc_current['state']    
       check(doc)  
       if(doc['state']==ASG_STATE_STARTED)
         # get credentials to launch instances from auth manager
         key=@am.get_credentials(account)
-        n_inst=@im.update_num_instances(account,key,name,TYPE_CONTAINER,doc['desired_capacity'],doc['availability_zones'])
-        # update timestamps used for cooldown by HM
-        if(n_inst<0) 
-          doc['last_scale_in_ts']=Time.now.to_i
-        elsif(n_inst>0)
-          doc['last_scale_out_ts']=Time.now.to_i
-        end        
+        @im.update_num_instances(account,key,name,TYPE_CONTAINER,doc['desired_capacity'],doc['availability_zones'],build_template(account,doc))
       end
       update(collection,{"name"=>name},doc)
     end
@@ -135,7 +129,7 @@ module ASG
       asg_doc['last_scale_out_ts']=Time.now.to_i
       update(get_collection(account),{"name"=>name},asg_doc)
     end
-
+   
     def stop_asg(account,name)
       asg_doc=retrieve_asg(account,name)
       if(asg_doc["state"]==ASG_STATE_STOPPED)

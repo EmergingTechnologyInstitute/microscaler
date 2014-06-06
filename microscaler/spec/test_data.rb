@@ -37,6 +37,7 @@ TEST_DOMAIN='mydomain.com'
 TEST_CPUS=1
 TEST_MEM=1024
 HOURLY_INSTANCE=true
+TEST_DATA={"test"=>'some_data'}
 
 LB_DOC={"name"=>"mylb","lb_port"=>80,"instances_port"=>8082,"availability_zones"=>["A1"],"protocol"=>"HTTP","options"=>["headers"]}
 LB_DOC2={"name"=>"mylb","lb_port"=>80,"instances_port"=>8083,"availability_zones"=>["A3"],"protocol"=>"HTTP","options"=>["headers"]}
@@ -56,4 +57,5 @@ INSTANCE_DOC2={"guid"=>"321c78c6-6560-4e4f-85fa-d5ae0177d6f0","name"=>"myasg","i
 
 LB_INSTANCE_DOC={"guid"=>"321c78c6-6560-4e4f-85fa-d5ae0177d6f0","name"=>"myasg","instance_id"=>"0","type"=>TYPE_LB,"status"=>"RUNNING","private_ip_address"=>"50.1.3.4","public_ip_address"=>"9.2.10.0","hostname"=>"host3","domain"=>"mydomain.com","n_cpus"=>1,"max_memory"=>1024,"availability_zone"=>"docker01","image_id"=>"abcd1234","hourly_billing"=>true,"timestamp"=>2000}
 
+TEST_TEMPLATE={:asg_name=>ASG_NAME,:instance_type=>"m1.small",:n_cpus=>1,:memory=>64,:desired=>1,:type=>TYPE_CONTAINER,:domain=>TEST_DOMAIN,:image_id=>TEST_IMAGE_ID,:hourly_billing=>HOURLY_INSTANCE,:availability_zones=>["docker01","docker02"],:metadata=>TEST_DATA}   
 

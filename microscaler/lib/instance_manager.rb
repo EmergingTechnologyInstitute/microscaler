@@ -191,18 +191,15 @@ module ASG
     end
 
     # updates & sets a absolute number of instances
-    def update_num_instances(account,key,asg_name,type,n_instances,availability_zones)
+    def update_num_instances(account,key,asg_name,type,n_instances,availability_zones,template)
       t=list_instances(account,asg_name,type)
-      if(t.empty?)
-        raise "set_num_instances: no instances found for #{asg_name}, at least one instance should be started"
-      end
       n_current=t.length
       n_delta=n_instances-n_current
       if(n_delta>0)
         lock=lease_lock(account,asg_name,START_TYPE_LEASE,n_delta)
         if(lock!=nil)
           L.debug "starting #{n_delta} instances"
-          start_instances(account,key,asg_name,type,n_delta,lock,availability_zones)
+          start_instances(account,key,asg_name,type,n_delta,lock,availability_zones,template)
         else
           L.warn "could not acquire lock for updating n instances"
         end
@@ -217,23 +214,16 @@ module ASG
       else
         L.debug "nothing to be done"  
       end
-      n_delta
     end
 
     # launch n instances for a ASG 
-    def start_instances(account,key,asg_name,type,n_instances,lock,availability_zones)
-      # get an instance to use as template
-      t=list_instances(account,asg_name,type)
-      if(t.empty?)
-        raise "no instances found for asg with name #{asg_name}"
-      end
-      template=t[0]
+    def start_instances(account,key,asg_name,type,n_instances,lock,availability_zones,template)
       azs=pick_azs(account,asg_name,availability_zones,n_instances)
       (1..n_instances).each do
-        launch_instance(account,key,template["name"],type,gen_hostname(account,template["name"]),template["domain"],template["n_cpus"],template["max_memory"],azs.shift(),template["image_id"],template["hourly_billing"],lock,template['metadata'])
+        launch_instance(account,key,template[:asg_name],type,gen_hostname(account,template[:asg_name]),template[:domain],template[:n_cpus],template[:memory],azs.shift(),template[:image_id],template[:hourly_billing],lock,template[:metadata])
        end
     end
-
+    
     # stop n instances for an ASG
     def stop_instances(account,key,asg_name,type,n_instances,lock)
       (1..n_instances).each do
@@ -260,8 +250,8 @@ module ASG
         list[az]=0
       end  
       
-      # now query instance manager to check what instances are already there and get the AZs for them
-      instances=list_instances(account,asg_name,TYPE_CONTAINER) 
+      # now query instance manager to check what instances are already running and get the AZs for them
+      instances=query_instances(account,{"name"=>asg_name,"type"=>TYPE_CONTAINER,"status"=>RUNNING_STATE},{},1000) 
       
       # now update the list with the number of instances in each AZ
       instances.each do |i|

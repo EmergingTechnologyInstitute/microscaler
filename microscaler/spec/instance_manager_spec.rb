@@ -20,7 +20,6 @@ require 'test_data'
 ['TERM', 'INT'].each { |sig| trap(sig) { exit! } }
 
 
-
 #---------------------------------------------------
 # Instance Manager
 #---------------------------------------------------
@@ -144,7 +143,7 @@ describe ASG::InstanceManager do
   describe "launch_instance" do
     it "launches an instance" do
       lock=@im.lease_lock(USER,ASG_NAME,START_TYPE_LEASE,1)
-      @im.launch_instance(USER,KEY,ASG_NAME,TYPE_CONTAINER,TEST_HOST,TEST_DOMAIN,TEST_CPUS,TEST_MEM,TEST_AZ,TEST_IMAGE_ID,true,lock,{"test"=>'some_data'})
+      @im.launch_instance(USER,KEY,ASG_NAME,TYPE_CONTAINER,TEST_HOST,TEST_DOMAIN,TEST_CPUS,TEST_MEM,TEST_AZ,TEST_IMAGE_ID,true,lock,TEST_DATA)
       sleep(15) # wait since this is an async process
       x=@im.query_instances(USER,{"name"=>ASG_NAME,"type"=>TYPE_CONTAINER},{"timestamp"=>1},100)
       $id=x[0]["instance_id"]
@@ -176,8 +175,7 @@ describe ASG::InstanceManager do
   describe "update_num_instance" do
     it "updates an instance count to set an absolute num of instances" do
       lock=@im.lease_lock(USER,ASG_NAME,START_TYPE_LEASE,1)
-      @im.launch_instance(USER,KEY,ASG_NAME,TYPE_CONTAINER,TEST_HOST,TEST_DOMAIN,TEST_CPUS,TEST_MEM,TEST_AZ,TEST_IMAGE_ID,true,lock,{"test"=>'some_data'})
- #     sleep(INTERVAL)
+      @im.launch_instance(USER,KEY,ASG_NAME,TYPE_CONTAINER,TEST_HOST,TEST_DOMAIN,TEST_CPUS,TEST_MEM,TEST_AZ,TEST_IMAGE_ID,true,lock,TEST_DATA)
       n=0
       while true do
         x=@im.query_instances(USER,{"name"=>ASG_NAME,"type"=>TYPE_CONTAINER},{"timestamp"=>1},100)
@@ -188,8 +186,7 @@ describe ASG::InstanceManager do
         sleep(INTERVAL)
       end
       x.length().should eql 1
-      @im.update_num_instances(USER,KEY,ASG_NAME,TYPE_CONTAINER,3,['docker01','docker02'])
-  #    sleep(INTERVAL)
+      @im.update_num_instances(USER,KEY,ASG_NAME,TYPE_CONTAINER,3,['docker01','docker02'],TEST_TEMPLATE)
       n=0
       while true do
         x=@im.query_instances(USER,{"name"=>ASG_NAME,"type"=>TYPE_CONTAINER},{"timestamp"=>1},100)
@@ -200,8 +197,7 @@ describe ASG::InstanceManager do
         sleep(INTERVAL)
       end
       x.length().should eql 3
-      @im.update_num_instances(USER,KEY,ASG_NAME,TYPE_CONTAINER,1,['docker01','docker02'])
-  #    sleep(INTERVAL) 
+      @im.update_num_instances(USER,KEY,ASG_NAME,TYPE_CONTAINER,1,['docker01','docker02'],TEST_TEMPLATE)
       while true do
         x=@im.query_instances(USER,{"name"=>ASG_NAME,"type"=>TYPE_CONTAINER},{"timestamp"=>1},100)
         n+=1
