@@ -46,7 +46,7 @@ module ASG
       rescue
       end
       if(tr!=nil)
-        raise "policywith name '#{doc["name"]}' exists!"
+        raise "policy with name '#{doc["name"]}' exists!"
       end
       create_or_update_as_policy(account,doc)
       create_or_update_as_asg(account,doc)
@@ -55,10 +55,12 @@ module ASG
 
     def update_policy(account,name,doc)
       collection=get_collection(account)
-      doc["name"]=name
-      create_or_update_as_policy(account,doc)
-      create_or_update_as_asg(account,doc)
-      update(collection,{"name"=>name},doc)
+      #doc["name"]=name
+      current_doc=retrieve_policy(account,name)
+      upd_doc(doc,current_doc)  
+      create_or_update_as_policy(account,current_doc)
+      create_or_update_as_asg(account,current_doc)
+      update(collection,{"name"=>name},current_doc)
     end
 
     def retrieve_policy(account,name)

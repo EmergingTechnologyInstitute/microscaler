@@ -72,7 +72,8 @@ ASG_SCHEMA = {
     "state" => {"type" => "string"},
     "url" => {"type" => "string"},
     "last_scale_out_ts"  => {"type" => "int"},
-    "last_scale_in_ts"   => {"type" => "int"}           
+    "last_scale_in_ts"   => {"type" => "int"},
+    "no_lb" => {"type" => "boolean"}             
   }
 }
 

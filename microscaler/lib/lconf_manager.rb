@@ -51,11 +51,15 @@ module ASG
 
     def update_lconf(account,name,doc)
       collection=get_collection(account)
-      doc["name"]=name
-      if(doc['metadata']==nil)
-        doc['metadata']={}
+      #doc["name"]=name
+      current_doc=retrieve_lconf(account,name)
+        L.debug current_doc
+      upd_doc(doc,current_doc)  
+        L.debug current_doc
+      if(current_doc['metadata']==nil)
+        current_doc['metadata']={}
       end
-      update(collection,{"name"=>name},doc)
+      update(collection,{"name"=>name},current_doc)
     end
 
     def retrieve_lconf(account,name)

@@ -60,9 +60,9 @@ optparse = OptionParser.new do|opt|
   opt.separator  ""
   opt.separator  "Options"
 
-  opt.on( '-a', '--asg NAME','ASG name' ) do |a|
-    options[:a] = a
-  end
+  #opt.on( '-a', '--asg NAME','ASG name' ) do |a|
+  #  options[:an] = a
+  #end
 
   opt.on( '-f', '--file FILE','[load] defaults file (yaml)' ) do |f|
     options[:f] = f
@@ -80,7 +80,7 @@ optparse = OptionParser.new do|opt|
     options[:k] = k
   end
 
-  opt.on('--lb-name NAME','[add/upd-lb/delete-lb] load balancer name' ) do |ln|
+  opt.on('-b','--lb-name NAME','[add/upd-lb/delete-lb] load balancer name' ) do |ln|
     options[:ln] = ln
   end
 
@@ -103,7 +103,7 @@ optparse = OptionParser.new do|opt|
   end
 =end 
    
-  opt.on('--lconf-name NAME','[add/upd-lconf/delete-lconf] launch configuration name' ) do |lc|
+  opt.on('-c','--lconf-name NAME','[add/upd-lconf/delete-lconf] launch configuration name' ) do |lc|
     options[:lc] = lc
   end
   
@@ -123,7 +123,7 @@ optparse = OptionParser.new do|opt|
       options[:im] = im
   end
 
-  opt.on('--asg-name NAME','[add/delete/upd//start/stop-asg/list-instances] autoscaling group name' ) do |an|
+  opt.on('-a','--asg-name NAME','[add/delete/upd//start/stop-asg/list-instances] autoscaling group name' ) do |an|
     options[:an] = an
   end
   
@@ -160,7 +160,7 @@ optparse = OptionParser.new do|opt|
   end 
   
   options[:nolb]=false
-  opt.on('--asg-no-load-balancer','[add/upd-asg] autoscaling group load balancer' ) do 
+  opt.on('-x','--asg-no-load-balancer','[add/upd-asg] autoscaling group load balancer' ) do 
       options[:nolb] = true
   end 
   
@@ -168,8 +168,8 @@ optparse = OptionParser.new do|opt|
     options[:d] = d
   end
      
-  opt.on('--policy-name NAME','[add/upd-policy/delete-policy] policyname' ) do |tn|
-    options[:tn] = tn
+  opt.on('-p','--policy-name NAME','[add/upd-policy/delete-policy] policyname' ) do |pn|
+    options[:pn] = pn
   end
   
   opt.on('--policy-asg NAME','[add/upd-policy] autoscaling group name for this policy' ) do |an|
@@ -274,9 +274,18 @@ class AsgCli
     conf=YAML.load_file("#{options[:f]}")
     File.open(CF_FILE, 'w') {|f| f.write conf.to_yaml }
   end
+  
+  def new_conf
+    conf=Hash.new
+    tokfile=YAML.load_file(CF_FILE)
+    conf['login']=Hash.new
+    conf['login']['token']=tokfile['login']['token']
+    conf['login']['target']=tokfile['login']['target']  
+    conf  
+  end            
 
   def login(options)
-    if(options[:u]==nil || options[:k]==nil || options[:k]==nil)
+    if(options[:u]==nil || options[:k]==nil || options[:t]==nil)
       p "Some options not provided, loading missing options from defaults..."
       if(!File.file?(CF_FILE))
         p "File defaults not loaded, please load defaults or provide all options"
@@ -300,7 +309,7 @@ class AsgCli
       conf['login']['target']=options[:t]
     end
     rest=RestClient.new(conf['login']['target'])
-    p "logging in @#{conf['login']['target']} user=#{conf['login']['user']} ..."
+    p "logging in @#{conf['login']['target']} user=#{conf['login']['user']} key=***** ..."
     result=rest.post('/login',{"user"=>conf['login']['user'],"key"=>conf['login']['key']},nil)
     if(result.code!='200')
       p 'error: ' + result.body
@@ -312,17 +321,25 @@ class AsgCli
   end
 
   def add_lb(options,upd)
-    if(options[:ln]==nil || options[:lp]==nil || options[:ip]==nil || options[:az]==nil || options[:lp]==nil)
+    #if(options[:ln]==nil || options[:lp]==nil || options[:ip]==nil || options[:az]==nil || options[:lp]==nil)
+    if(options[:ip]==nil)
       p "Some options not provided, loading missing options from defaults..."
     end
     if(!File.file?(CF_FILE))
       p "File defaults not loaded, please load defaults or login first"
       exit -1
     end
-    conf=YAML.load_file(CF_FILE)
-    if(options[:ln]!=nil)
-      conf['load_balancer']['name']=options[:ln]
+    if (!upd)
+      conf=YAML.load_file(CF_FILE)
+    else
+      conf=new_conf
+      conf['load_balancer']=Hash.new
+    end    
+    if(options[:ln]==nil)
+      p 'You must provide -b (--lb-name)'
+      exit -1
     end
+    conf['load_balancer']['name']=options[:ln]    
     if(options[:ip]!=nil)
       conf['load_balancer']['instances_port']=options[:ip]
     end
@@ -339,13 +356,14 @@ class AsgCli
 =end
     # CURRENTLY CAN ONLY USE THESE VALUES
     conf['load_balancer']['lb_port']=80
-    conf['load_balancer']['availability_zones']='docker02'
-    conf['load_balancer']['protocol']='HTTP'    
+    conf['load_balancer']['availability_zones']=['docker02']
+    conf['load_balancer']['protocol']='HTTP'  
+    conf['load_balancer']['options']=["headers"]      
     if(conf['login']['token']==nil)
       p 'Please login before running this command'
       exit -1
     end
-    File.open(CF_FILE, 'w') {|f| f.write conf.to_yaml }
+    #File.open(CF_FILE, 'w') {|f| f.write conf.to_yaml }
     rest=RestClient.new(conf['login']['target'])
     if(!upd)  
       p "adding load balancer #{conf['load_balancer']} ..."
@@ -382,20 +400,16 @@ class AsgCli
   end
   
   def delete_lb(options)
-    if(options[:ln]==nil )
-      p "Some options not provided, loading missing options from defaults..."
-    end  
     if(!File.file?(CF_FILE))
       p "File defaults not loaded, please load defaults or login first"
       exit -1
     end
     conf=YAML.load_file(CF_FILE)
-    if(options[:ln]!=nil)
-      conf['load_balancer']['name']=options[:ln]
+    if(options[:ln]==nil)
+       p 'You must provide -b (--lb-name)'
+       exit -1
     end
-    if(conf['load_balancer']['name']==nil)
-       p 'please provide lb-name for this command'
-    end  
+    conf['load_balancer']['name']=options[:ln]
     if(conf['login']['token']==nil)
       p 'Please login before running this command'
       exit -1
@@ -412,17 +426,24 @@ class AsgCli
   end
   
   def add_lconf(options,upd)
-    if(options[:lc]==nil || options[:iid]==nil || options[:it]==nil || options[:ik]==nil)
+    if(options[:iid]==nil || options[:it]==nil || options[:ik]==nil)
       p "Some options not provided, loading missing options from defaults..."
     end
     if(!File.file?(CF_FILE))
       p "File defaults not loaded, please load defaults or login first"
       exit -1
     end
-    conf=YAML.load_file(CF_FILE)
-    if(options[:lc]!=nil)
-      conf['launch_configuration']['name']=options[:lc]
-    end
+    if (!upd)
+      conf=YAML.load_file(CF_FILE)
+    else
+      conf=new_conf
+      conf['launch_configuration']=Hash.new
+    end    
+    if(options[:lc]==nil)
+       p 'You must provide -c (--lconf-name)'
+       exit -1
+    end    
+    conf['launch_configuration']['name']=options[:lc]
     if(options[:iid]!=nil)
       conf['launch_configuration']['image_id']=options[:iid]
     end
@@ -440,7 +461,7 @@ class AsgCli
       p 'Please login before running this command'
       exit -1
     end
-    File.open(CF_FILE, 'w') {|f| f.write conf.to_yaml }
+    #File.open(CF_FILE, 'w') {|f| f.write conf.to_yaml }
     rest=RestClient.new(conf['login']['target'])
     if(!upd)  
       p "adding launch configuration #{conf['launch_configuration']} ..."
@@ -477,26 +498,24 @@ class AsgCli
     js.each do |l| 
       if(l['metadata']!=nil)
         l['metadata']=l['metadata'].to_json
+      else
+        l['metadata']='N/A'    
       end  
     end  
     tp js, :name, {:image_id=>{:width=>48}},:instances_type, :key, {:metadata=>{:width=>48}} 
   end
 
   def delete_lconf(options)
-    if(options[:lc]==nil )
-      p "Some options not provided, loading missing options from defaults..."
-    end
     if(!File.file?(CF_FILE))
       p "File defaults not loaded, please load defaults or login first"
       exit -1
     end
     conf=YAML.load_file(CF_FILE)
-    if(options[:lc]!=nil)
-      conf['launch_configuration']['name']=options[:lc]
-    end
-    if(conf['launch_configuration']['name']==nil)
-      p 'please provide lconf-name for this command'
-    end
+    if(options[:lc]==nil)
+       p 'You must provide -c (--lconf-name)'
+       exit -1
+    end    
+    conf['launch_configuration']['name']=options[:lc]
     if(conf['login']['token']==nil)
       p 'Please login before running this command'
       exit -1
@@ -513,7 +532,7 @@ class AsgCli
   end
 
   def add_asg(options,upd)
-    if(options[:an]==nil || options[:az]==nil || options[:lc]==nil || options[:min]==nil || options[:max]==nil || 
+    if(options[:az]==nil || options[:lc]==nil || options[:min]==nil || options[:max]==nil || 
       options[:soc]==nil || options[:sic]==nil || options[:lb]==nil || options[:d]==nil)
       p "Some options not provided, loading missing options from defaults..."
     end
@@ -521,10 +540,18 @@ class AsgCli
       p "File defaults not loaded, please load defaults or login first"
       exit -1
     end
-    conf=YAML.load_file(CF_FILE)
-    if(options[:an]!=nil)
-      conf['autoscaling_group']['name']=options[:an]
-    end
+    if (!upd)
+      conf=YAML.load_file(CF_FILE)
+    else
+      conf=new_conf
+      p conf
+      conf['autoscaling_group']=Hash.new
+    end   
+    if(options[:an]==nil)
+      p 'You must provide -a (--asg-name)'
+      exit -1
+    end     
+    conf['autoscaling_group']['name']=options[:an]
     if(options[:az]!=nil)
       conf['autoscaling_group']['availability_zones']=options[:az].split(",")
     end
@@ -550,7 +577,7 @@ class AsgCli
        conf['autoscaling_group']['load_balancer']=options[:lb]
     end
     if(options[:nolb])
-      conf['autoscaling_group'].delete('load_balancer')
+      conf['autoscaling_group']['no_lb']=true
     end
     if(options[:d]!=nil)
       conf['autoscaling_group']['domain']=options[:d]
@@ -560,7 +587,10 @@ class AsgCli
       p 'Please login before running this command'
       exit -1
     end
-    File.open(CF_FILE, 'w') {|f| f.write conf.to_yaml }
+    p conf['autoscaling_group']['name']
+    p conf['autoscaling_group']  
+    
+    #File.open(CF_FILE, 'w') {|f| f.write conf.to_yaml }
     rest=RestClient.new(conf['login']['target'])
     if(!upd)
       p "adding autoscaling group #{conf['autoscaling_group']} ..."
@@ -596,25 +626,21 @@ class AsgCli
     if(options[:dl])
       tp js
     else
-      tp js,:name,:state,:availability_zones,{:url =>{:width => 48}},:min_size,:max_size,:desired_capacity
+      tp js,:name,:state,:availability_zones,{:url =>{:width => 48}},:min_size,:max_size,:desired_capacity,:launch_configuration
     end  
   end
   
   def delete_asg(options)
-    if(options[:ln]==nil )
-      p "Some options not provided, loading missing options from defaults..."
-    end  
     if(!File.file?(CF_FILE))
       p "File defaults not loaded, please load defaults or login first"
       exit -1
     end
     conf=YAML.load_file(CF_FILE)
-    if(options[:an]!=nil)
-      conf['autoscaling_group']['name']=options[:an]
-    end
-    if(conf['autoscaling_group']['name']==nil)
-       p 'please provide asg-name for this command'
-    end  
+    if(options[:an]==nil)
+      p 'You must provide -a (--asg-name)'
+      exit -1
+    end    
+    conf['autoscaling_group']['name']=options[:an]
     if(conf['login']['token']==nil)
       p 'Please login before running this command'
       exit -1
@@ -631,25 +657,21 @@ class AsgCli
   end    
   
   def run_asg_command(options,command)
-    if(options[:an]==nil )
-      p "Some options not provided, loading missing options from defaults..."
-    end  
     if(!File.file?(CF_FILE))
       p "File defaults not loaded, please load defaults or login first"
       exit -1
     end
+    if(options[:an]==nil)
+      p 'You must provide -a (--asg-name)'
+      exit -1
+    end    
     conf=YAML.load_file(CF_FILE)
-    if(options[:an]!=nil)
-      conf['autoscaling_group']['name']=options[:an]
-    end
-    if(conf['autoscaling_group']['name']==nil)
-       p 'please provide asg-name for this command'
-    end  
+    conf['autoscaling_group']['name']=options[:an]
     if(conf['login']['token']==nil)
       p 'Please login before running this command'
       exit -1
     end
-    File.open(CF_FILE, 'w') {|f| f.write conf.to_yaml }
+    #File.open(CF_FILE, 'w') {|f| f.write conf.to_yaml }
     rest=RestClient.new(conf['login']['target'])
     p "running #{command} autoscaling group for #{conf['autoscaling_group']['name']} ..."
     result = rest.put("/asgs/#{conf['autoscaling_group']['name']}/#{command}",nil, {"authorization"=>conf['login']['token']} )
@@ -661,20 +683,16 @@ class AsgCli
   end    
   
   def list_instances(options)
-    if(options[:an]==nil )
-      p "Some options not provided, loading missing options from defaults..."
-    end  
     if(!File.file?(CF_FILE))
       p "File defaults not loaded, please load defaults or login first"
       exit -1
     end
     conf=YAML.load_file(CF_FILE)
-    if(options[:an]!=nil)
-      conf['autoscaling_group']['name']=options[:an]
-    end
-    if(conf['autoscaling_group']['name']==nil)
-      p 'please provide asg-name for this command'
-    end  
+    if(options[:an]==nil)
+      p 'You must provide -a (--asg-name)'
+      exit -1
+    end    
+    conf['autoscaling_group']['name']=options[:an]
     if(conf['login']['token']==nil)
       p 'Please login before running this command'
       exit -1
@@ -695,33 +713,33 @@ class AsgCli
   end
   
   def list_instance_types(options) 
-      if(!File.file?(CF_FILE))
-        p "File defaults not loaded, please load defaults or login first"
-        exit -1
-      end
-      conf=YAML.load_file(CF_FILE) 
-      if(conf['login']['token']==nil)
-        p 'Please login before running this command'
-        exit -1
-      end
-      rest=RestClient.new(conf['login']['target'])
-      result = rest.get("/instance_types", {"authorization"=>conf['login']['token']} )
-      if(result.code!='200')
-        p 'error: ' + result.body
-        exit -1
-      end
-      p "listing available instances types"
-      js=JSON.parse(result.body)
-      array=Array.new
-      js.each { |key, value| 
-        value['type']=key
-        array << value  
-      }
-      tp array, :type, :vcpu, :memory, :disk                 
+    if(!File.file?(CF_FILE))
+      p "File defaults not loaded, please load defaults or login first"
+      exit -1
     end
+    conf=YAML.load_file(CF_FILE) 
+    if(conf['login']['token']==nil)
+      p 'Please login before running this command'
+      exit -1
+    end
+    rest=RestClient.new(conf['login']['target'])
+    result = rest.get("/instance_types", {"authorization"=>conf['login']['token']} )
+    if(result.code!='200')
+      p 'error: ' + result.body
+      exit -1
+    end
+    p "listing available instances types"
+    js=JSON.parse(result.body)
+    array=Array.new
+    js.each { |key, value| 
+      value['type']=key
+      array << value  
+    }
+    tp array, :type, :vcpu, :memory              
+  end
   
   def add_policy(options,upd)
-    if(options[:tn]==nil || options[:an]==nil || options[:m]==nil || options[:st]==nil || options[:sw]==nil || 
+    if(options[:an]==nil || options[:m]==nil || options[:st]==nil || options[:sw]==nil || 
       options[:bd]==nil || options[:sos]==nil || options[:sis]==nil || options[:ut]==nil || options[:lt]==nil)
       p "Some options not provided, loading missing options from defaults..."
     end
@@ -729,10 +747,17 @@ class AsgCli
       p "File defaults not loaded, please load defaults or login first"
       exit -1
     end
-    conf=YAML.load_file(CF_FILE)
-    if(options[:tn]!=nil)
-      conf['policy']['name']=options[:tn]
-    end
+    if (!upd)
+       conf=YAML.load_file(CF_FILE)
+    else
+      conf=new_conf
+      conf['policy']=Hash.new
+    end   
+    if(options[:pn]==nil)
+      p 'You must provide -p (--policy-name)'
+      exit -1
+    end     
+    conf['policy']['name']=options[:pn]
     if(options[:an]!=nil)
       conf['policy']['auto_scaling_group']=options[:an]
     end
@@ -806,20 +831,16 @@ class AsgCli
   end
 
   def delete_policy(options)
-    if(options[:ln]==nil )
-      p "Some options not provided, loading missing options from defaults..."
-    end  
     if(!File.file?(CF_FILE))
       p "File defaults not loaded, please load defaults or login first"
       exit -1
     end
     conf=YAML.load_file(CF_FILE)
-    if(options[:tn]!=nil)
-      conf['policy']['name']=options[:tn]
-    end
-    if(conf['policy']['name']==nil)
-       p 'please provide policy-name for this command'
-    end  
+    if(options[:pn]==nil)
+      p 'You must provide -p (--policy-name)'
+      exit -1
+    end     
+    conf['policy']['name']=options[:pn]
     if(conf['login']['token']==nil)
       p 'Please login before running this command'
       exit -1
@@ -833,7 +854,7 @@ class AsgCli
       exit -1
     end
     p 'OK'
-  end      
+  end
   
 end
 

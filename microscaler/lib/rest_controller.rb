@@ -58,6 +58,7 @@ end
   asg_user=conf["database"]["asg_user"]
   asg_password=conf["database"]["asg_password"]
   as_auth_token=conf["autoscaler"]["authorization_token"]
+  instance_types=conf["instance_types"]
   
   dbm=ASG::DbManager.new
   dbm.create_db(im_db,im_user,im_password)
@@ -463,7 +464,24 @@ end
       {"status"=>"ERROR","message"=>e.message}.to_json
     end
   end
-
+  
+  # list instances types
+  get '/asgcc/instance_types' do
+    token=env["HTTP_AUTHORIZATION"]
+    L.debug("GET /asgcc/instance_types - token: #{token}")
+    begin
+      creds=am.check_token(token)
+      account=creds[1]
+      content_type :json
+      status 200
+      instance_types.to_json
+    rescue=>e
+      L.error(e.message)
+      content_type :json
+      status 500
+      {"status"=>"ERROR","message"=>e.message}.to_json
+    end
+  end
   #----------------------------------------------------
   # Policys Management
   #---------------------------------------------------

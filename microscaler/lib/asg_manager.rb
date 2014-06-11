@@ -67,15 +67,16 @@ module ASG
       else
         doc['url']='N/A'     
       end     
-      doc_current=retrieve_asg(account,name)              
-      doc['state']=doc_current['state']    
-      check(doc)  
-      if(doc['state']==ASG_STATE_STARTED)
+      current_doc=retrieve_asg(account,name)  
+      upd_doc(doc,current_doc)            
+      L.debug current_doc 
+      check(current_doc)  
+      if(current_doc['state']==ASG_STATE_STARTED)
         # get credentials to launch instances from auth manager
         key=@am.get_credentials(account)
-        @im.update_num_instances(account,key,name,TYPE_CONTAINER,doc['desired_capacity'],doc['availability_zones'],build_template(account,doc))
+        @im.update_num_instances(account,key,name,TYPE_CONTAINER,current_doc['desired_capacity'],current_doc['availability_zones'],build_template(account,current_doc))
       end
-      update(collection,{"name"=>name},doc)
+      update(collection,{"name"=>name},current_doc)
     end
 
     def retrieve_asg(account,name)
@@ -206,6 +207,9 @@ module ASG
     
     def check(doc)
       errors=JSON::Validator.validate!(ASG_SCHEMA, doc)
+      if(doc['no_lb']!=nil && doc['no_lb']=true)
+        doc.delete('load_balancer')
+      end  
       if(doc['desired_capacity']>doc['max_size'])
         raise 'cannot set target number of instances larger then max_size [#{doc["max_size"]}]'
       elsif(doc['desired_capacity']<doc['min_size'])

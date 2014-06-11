@@ -96,6 +96,12 @@ module ASG
       end
       accounts
     end
+    
+    def upd_doc(new,current)
+      new.each { |key,value|
+        current[key]=value
+      }   
+    end   
 
   end
 end

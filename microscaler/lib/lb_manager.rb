@@ -50,8 +50,10 @@ module ASG
     def update_lb(account,name,doc)
       # should add the code to reconfigure the LB
       collection=get_collection(account)
-      doc["name"]=name
-      update(collection,{"name"=>name},doc)
+      current_doc=retrieve_lb(account,name)
+      upd_doc(doc,current_doc)
+      #doc["name"]=name
+      update(collection,{"name"=>name},current_doc)
     end
 
     def retrieve_lb(account,name)
