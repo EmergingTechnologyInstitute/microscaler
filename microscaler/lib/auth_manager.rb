@@ -73,7 +73,7 @@ module ASG
           # reset token & update
           doc[0]["token"]=nil
           @em.remove_db_id(doc)
-          @em.update(TOK_COLLECTION,{"user"=>user,"password"=>password},doc[0])
+          @em.update(TOK_COLLECTION,{"user"=>user=doc[0]["user"],"password"=>doc[0]["password"]},doc[0])
           raise "Token expired. Please login to acquire new token"
         end
         user=doc[0]["user"]
