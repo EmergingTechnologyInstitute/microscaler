@@ -234,14 +234,22 @@ module ASG
 
     def get_instances(account,asg_name)
       asg_key=get_asg_key(account,asg_name)
-      instances=@asgs[asg_key][0]
+      if (@asgs[asg_key]!=nil)
+        return @asgs[asg_key][0]
+      else
+        return []
+      end
     end
-    
+
     # gets the last ts detected for a pending action such as stopping or starting
     # this is used to wait a little after a pending action since the state might not be current
     def get_last_ts_pending_action(account,asg_name)
       asg_key=get_asg_key(account,asg_name)
-      @asgs[asg_key][1]
+      if(@asgs[asg_key]!=nil)
+        return @asgs[asg_key][1]
+      else
+        return 0
+      end
     end
 
     # finds the timestamp for the youngest instance that was launched

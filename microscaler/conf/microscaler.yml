@@ -49,7 +49,7 @@ instance_manager:
 docker:
   daemon_url: http://172.17.42.1:4243 
   # for Docker 0.10 >
-  #container_dns: "172.17.42.1\nsearch auth-service.dev.docker"
+  container_dns: "172.17.42.1\nsearch auth-service.dev.docker"
   # for Docker 0.10 <=
   #container_dns: 172.17.42.1
   #container_dns_search: [ domain1, domain2 ] 
