@@ -143,5 +143,4 @@ it shows events related to the invocation of the REST API (e.g. through CLI or a
 2. monitoring components and webhooks to support policy-based elastic autoscaling are not implemented.
 
 ## License
-
 Apache 2.0
