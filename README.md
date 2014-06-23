@@ -2,6 +2,7 @@ microscaler - an implementation of autoscaling groups for docker containers.
 ============================================================================
 
 ## Requirements
+
 docker 0.9 and higher
 
 ## Installing
